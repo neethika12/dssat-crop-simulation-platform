@@ -1,3 +1,6 @@
 {
-  "outputDirectory": "webapp/frontend"
+  "framework": null,
+  "outputDirectory": "webapp/frontend",
+  "buildCommand": null,
+  "installCommand": null
 }

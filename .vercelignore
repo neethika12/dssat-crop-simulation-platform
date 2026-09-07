@@ -1,0 +1,13 @@
+dssat_validator/
+webapp/backend/
+tests/
+examples/
+docs/
+dssat-csm-src/
+dssat-data/
+dssat_home/
+venv/
+*.py
+pyproject.toml
+Dockerfile
+render.yaml
