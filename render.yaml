@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: dssat-validation-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/experiments
+    envVars:
+      - key: PORT
+        value: 8420

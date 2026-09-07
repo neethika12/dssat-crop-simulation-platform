@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSSAT Crop Simulation Validation Platform</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<header>
+  <h1>DSSAT Crop Simulation Validation Platform</h1>
+  <p class="subtitle">Real DSSAT-CSM engine &middot; real field-trial data &middot; automated cultivar calibration</p>
+</header>
+
+<main>
+  <section class="card controls">
+    <div class="control-row">
+      <label for="experiment-select">Field trial experiment</label>
+      <select id="experiment-select"></select>
+      <button id="run-validate-btn">Run Validation</button>
+    </div>
+    <p id="experiment-meta" class="meta"></p>
+  </section>
+
+  <section id="validation-section" class="hidden">
+    <div class="card">
+      <h2>Validation — simulated vs. observed</h2>
+      <div id="metric-cards" class="metric-cards"></div>
+      <div class="chart-wrap"><canvas id="validation-chart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card controls">
+    <h2>Automated Calibration</h2>
+    <p class="meta">Searches cultivar genetic coefficients (P1, P2, P5, G2, G3) with differential evolution to minimize simulated-vs-measured error.</p>
+    <div class="control-row">
+      <label for="maxiter-input">Generations</label>
+      <input id="maxiter-input" type="number" min="1" max="15" value="6" />
+      <label for="popsize-input">Population</label>
+      <input id="popsize-input" type="number" min="2" max="12" value="8" />
+      <button id="run-calibrate-btn">Run Calibration</button>
+    </div>
+  </section>
+
+  <section id="calibration-section" class="hidden">
+    <div class="card">
+      <h2>Calibration Results</h2>
+      <div id="calibration-summary" class="metric-cards"></div>
+      <div class="chart-wrap"><canvas id="convergence-chart"></canvas></div>
+      <h3>Best cultivar coefficients found</h3>
+      <table id="params-table"></table>
+    </div>
+  </section>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+    <p id="loading-text">Running DSSAT-CSM…</p>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

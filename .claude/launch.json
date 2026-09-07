@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dssat-webapp",
+      "runtimeExecutable": "venv/bin/python3",
+      "runtimeArgs": ["-m", "uvicorn", "webapp.backend.main:app", "--host", "127.0.0.1", "--port", "8420"],
+      "port": 8420
+    }
+  ]
+}

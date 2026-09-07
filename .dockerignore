@@ -1,0 +1,13 @@
+venv/
+dssat-csm-src/
+dssat-data/
+dssat_home/
+tests/
+examples/
+docs/
+.git/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.egg-info/
+README.md

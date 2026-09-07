@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+dssat_validator.egg-info/
+*.OUT
+*.LST
+fort.*
+DSSFILE.CDE
+INFO.OUT
+
+# Cloned upstream source/data and compiled engine: large, platform-specific,
+# and reproducible via docs/BUILD.md. Not checked in.
+dssat-csm-src/
+dssat-data/
+dssat_home/
