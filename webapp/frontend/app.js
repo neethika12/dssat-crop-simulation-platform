@@ -11,6 +11,10 @@ let validationChart = null;
 let convergenceChart = null;
 let experiments = [];
 
+// Tracks which result sections have real (not tour-peeked) content, so the
+// tour knows which sections it's safe to re-hide when it moves on.
+const renderedReal = { validation: false, calibration: false, upload: false };
+
 function setLoading(on, text) {
   loadingOverlay.classList.toggle("hidden", !on);
   if (text) loadingText.textContent = text;
@@ -73,6 +77,7 @@ async function runValidation() {
 }
 
 function renderValidation(data) {
+  renderedReal.validation = true;
   document.getElementById("validation-section").classList.remove("hidden");
   const r = data.report;
   document.getElementById("metric-cards").innerHTML = [
@@ -147,6 +152,7 @@ async function runCalibration() {
 }
 
 function renderCalibration(data) {
+  renderedReal.calibration = true;
   document.getElementById("calibration-section").classList.remove("hidden");
   document.getElementById("calibration-summary").innerHTML = [
     metricCard("Baseline RMSE", data.baseline_score.toFixed(1)),
@@ -264,6 +270,7 @@ async function runUpload() {
 }
 
 function renderUploadResult(data) {
+  renderedReal.upload = true;
   uploadResultCache = data;
   document.getElementById("upload-results-section").classList.remove("hidden");
   const messageEl = document.getElementById("upload-message");
@@ -343,4 +350,205 @@ runUploadBtn.addEventListener("click", runUpload);
 runValidateBtn.addEventListener("click", runValidation);
 runCalibrateBtn.addEventListener("click", runCalibration);
 
+// --- Guided tour ---
+
+const TOUR_STEPS = [
+  {
+    target: null,
+    title: "Welcome 👋",
+    text: "This tool tests whether a real crop-simulation model (DSSAT) predicts real harvests accurately, and can automatically tune it to fit better. This quick tour walks through every part in under a minute — click Next.",
+  },
+  {
+    target: "experiment-controls-section",
+    title: "1. Pick a real experiment",
+    text: "This dropdown lists real field experiments — actual crop trials run by researchers decades ago, with real measured outcomes. Nothing here is synthetic data.",
+  },
+  {
+    target: "run-validate-btn",
+    title: "2. Run the real model",
+    text: "Clicking this runs the actual DSSAT simulation engine (not a shortcut or approximation) using that experiment's real weather, soil, and management data, and asks it to predict the yield.",
+  },
+  {
+    target: "validation-section",
+    peek: "validation",
+    title: "3. See how close it got",
+    text: "Results appear here: the model's prediction next to what was really harvested, plus four different \"how close was it?\" scores. The full guide explains each one in plain English.",
+  },
+  {
+    target: "calibration-controls-section",
+    title: "4. Auto-tune the model",
+    text: "Crop varieties have internal coefficients nobody knows exactly in advance. This searches many combinations automatically and keeps whichever one best matches the real measured results.",
+  },
+  {
+    target: "calibration-section",
+    peek: "calibration",
+    title: "5. Calibration results",
+    text: "After calibrating, you'll see the error shrink here, plus the specific coefficient values it landed on.",
+  },
+  {
+    target: "upload-section",
+    title: "6. Bring your own data",
+    text: "Have a real DSSAT experiment file of your own (any crop)? Upload it here and it runs through this same real engine — on your data, not the built-in examples.",
+  },
+  {
+    target: "upload-results-section",
+    peek: "upload",
+    title: "7. Your results",
+    text: "Your uploaded experiment's results appear here the same way — predicted vs. measured, with the same scoring.",
+  },
+  {
+    target: "open-guide-btn",
+    title: "8. Full glossary, anytime",
+    text: "If a term doesn't make sense later, this button has a complete plain-English explanation of everything on this page.",
+  },
+  {
+    target: null,
+    title: "That's it! 🌽",
+    text: "You're ready to explore. Pick an experiment above and click Run Validation to see real results.",
+  },
+];
+
+const tourOverlay = document.getElementById("tour-overlay");
+const tourSpotlight = document.getElementById("tour-spotlight");
+const tourTooltip = document.getElementById("tour-tooltip");
+const tourStepCountEl = document.getElementById("tour-step-count");
+const tourTitleEl = document.getElementById("tour-title");
+const tourTextEl = document.getElementById("tour-text");
+const tourBackBtn = document.getElementById("tour-back-btn");
+const tourNextBtn = document.getElementById("tour-next-btn");
+const tourSkipBtn = document.getElementById("tour-skip-btn");
+
+let tourIndex = 0;
+const tourPeeked = new Set();
+const TOUR_PAD = 8;
+
+function tourCleanupPeeks(exceptStepIndex) {
+  const exceptPeek = TOUR_STEPS[exceptStepIndex]?.peek;
+  tourPeeked.forEach((peekId) => {
+    if (peekId === exceptPeek) return;
+    if (renderedReal[peekId]) {
+      tourPeeked.delete(peekId);
+      return;
+    }
+    const sectionId =
+      peekId === "validation"
+        ? "validation-section"
+        : peekId === "calibration"
+        ? "calibration-section"
+        : "upload-results-section";
+    document.getElementById(sectionId).classList.add("hidden");
+    tourPeeked.delete(peekId);
+  });
+}
+
+function tourShowStep(index) {
+  tourCleanupPeeks(index);
+  const step = TOUR_STEPS[index];
+  tourIndex = index;
+
+  if (step.peek) {
+    const sectionId =
+      step.peek === "validation"
+        ? "validation-section"
+        : step.peek === "calibration"
+        ? "calibration-section"
+        : "upload-results-section";
+    const section = document.getElementById(sectionId);
+    if (section.classList.contains("hidden")) {
+      section.classList.remove("hidden");
+      tourPeeked.add(step.peek);
+    }
+  }
+
+  tourStepCountEl.textContent = `Step ${index + 1} of ${TOUR_STEPS.length}`;
+  tourTitleEl.textContent = step.title;
+  tourTextEl.textContent = step.text;
+  tourBackBtn.style.visibility = index === 0 ? "hidden" : "visible";
+  tourNextBtn.textContent = index === TOUR_STEPS.length - 1 ? "Finish" : "Next";
+
+  const target = step.target ? document.getElementById(step.target) : null;
+  if (target) {
+    target.scrollIntoView({ block: "center", behavior: "instant" });
+  }
+  // Let scroll + peek-reveal settle before measuring positions.
+  requestAnimationFrame(() => tourPositionElements(target));
+}
+
+function tourPositionElements(target) {
+  if (!target) {
+    tourSpotlight.classList.add("tour-no-target");
+    tourSpotlight.style.width = "0px";
+    tourSpotlight.style.height = "0px";
+    tourSpotlight.style.top = "-9999px";
+    tourSpotlight.style.left = "-9999px";
+    tourTooltip.style.top = "50%";
+    tourTooltip.style.left = "50%";
+    tourTooltip.style.transform = "translate(-50%, -50%)";
+    return;
+  }
+
+  tourSpotlight.classList.remove("tour-no-target");
+  const rect = target.getBoundingClientRect();
+  tourSpotlight.style.top = `${rect.top - TOUR_PAD}px`;
+  tourSpotlight.style.left = `${rect.left - TOUR_PAD}px`;
+  tourSpotlight.style.width = `${rect.width + TOUR_PAD * 2}px`;
+  tourSpotlight.style.height = `${rect.height + TOUR_PAD * 2}px`;
+
+  tourTooltip.style.transform = "none";
+  const tooltipWidth = tourTooltip.offsetWidth || 320;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const placeBelow = spaceBelow > 200 || rect.top < window.innerHeight / 2;
+
+  if (placeBelow) {
+    tourTooltip.style.top = `${rect.bottom + TOUR_PAD + 14}px`;
+  } else {
+    tourTooltip.style.top = `${Math.max(16, rect.top - TOUR_PAD - 14 - tourTooltip.offsetHeight)}px`;
+  }
+  const left = Math.min(Math.max(rect.left, 16), window.innerWidth - tooltipWidth - 16);
+  tourTooltip.style.left = `${left}px`;
+}
+
+function tourStart() {
+  tourOverlay.classList.remove("hidden");
+  tourShowStep(0);
+}
+
+function tourEnd() {
+  tourCleanupPeeks(-1);
+  tourOverlay.classList.add("hidden");
+  try {
+    localStorage.setItem("dssat_tour_seen", "1");
+  } catch {
+    // Private browsing / storage disabled: no big deal, tour just replays each visit.
+  }
+}
+
+tourNextBtn.addEventListener("click", () => {
+  if (tourIndex >= TOUR_STEPS.length - 1) {
+    tourEnd();
+  } else {
+    tourShowStep(tourIndex + 1);
+  }
+});
+tourBackBtn.addEventListener("click", () => {
+  if (tourIndex > 0) tourShowStep(tourIndex - 1);
+});
+tourSkipBtn.addEventListener("click", tourEnd);
+document.getElementById("start-tour-btn").addEventListener("click", tourStart);
+window.addEventListener("resize", () => {
+  if (!tourOverlay.classList.contains("hidden")) {
+    const step = TOUR_STEPS[tourIndex];
+    tourPositionElements(step.target ? document.getElementById(step.target) : null);
+  }
+});
+
 loadExperiments();
+
+// Auto-start the tour once per browser for first-time visitors.
+try {
+  if (!localStorage.getItem("dssat_tour_seen")) {
+    tourStart();
+  }
+} catch {
+  // Storage unavailable — just skip the auto-start, manual button still works.
+}

@@ -15,12 +15,15 @@
       <h1>DSSAT Crop Simulation Validation Platform</h1>
       <p class="subtitle">Real DSSAT-CSM engine &middot; real field-trial data &middot; automated cultivar calibration</p>
     </div>
-    <button id="open-guide-btn" class="secondary-btn">How This Works</button>
+    <div class="header-buttons">
+      <button id="start-tour-btn" class="secondary-btn">Take the Tour</button>
+      <button id="open-guide-btn" class="secondary-btn">How This Works</button>
+    </div>
   </div>
 </header>
 
 <main>
-  <section class="card controls">
+  <section class="card controls" id="experiment-controls-section">
     <div class="control-row">
       <label for="experiment-select">Field trial experiment</label>
       <select id="experiment-select"></select>
@@ -37,7 +40,7 @@
     </div>
   </section>
 
-  <section class="card controls">
+  <section class="card controls" id="calibration-controls-section">
     <h2>Automated Calibration</h2>
     <p class="meta">Searches cultivar genetic coefficients (P1, P2, P5, G2, G3) with differential evolution to minimize simulated-vs-measured error.</p>
     <div class="control-row">
@@ -225,6 +228,22 @@
       after inactivity (the first request after a while may take ~30-60s to
       wake back up — that's normal, not a bug).
     </p>
+  </div>
+</div>
+
+<div id="tour-overlay" class="hidden">
+  <div id="tour-spotlight"></div>
+  <div id="tour-tooltip">
+    <p id="tour-step-count" class="tour-step-count"></p>
+    <h3 id="tour-title"></h3>
+    <p id="tour-text"></p>
+    <div class="tour-controls">
+      <button id="tour-skip-btn" class="secondary-btn small">Skip tour</button>
+      <div class="tour-nav">
+        <button id="tour-back-btn" class="secondary-btn small">Back</button>
+        <button id="tour-next-btn">Next</button>
+      </div>
+    </div>
   </div>
 </div>
 
