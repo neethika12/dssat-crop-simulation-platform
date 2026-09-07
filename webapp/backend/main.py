@@ -61,8 +61,8 @@ class CalibrateRequest(BaseModel):
     experiment_code: str
     target_variable: str = "HWAM"
     metric: str = "rmse"
-    maxiter: int = Field(default=6, ge=1, le=15)
-    popsize: int = Field(default=8, ge=2, le=12)
+    maxiter: int = Field(default=2, ge=1, le=8)
+    popsize: int = Field(default=3, ge=2, le=6)
 
 
 @app.get("/api/experiments")
@@ -129,12 +129,27 @@ def api_validate(experiment_code: str, target_variable: str = "HWAM"):
     }
 
 
+MAX_CALIBRATION_EVALUATIONS = 70  # keeps worst case under ~2 min on a slow free-tier host
+
+
 @app.post("/api/calibrate")
 def api_calibrate(req: CalibrateRequest):
     try:
         experiment = get_experiment(req.experiment_code)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    n_params = len(DEFAULT_BOUNDS)
+    estimated_evaluations = req.popsize * n_params * (req.maxiter + 1)
+    if estimated_evaluations > MAX_CALIBRATION_EVALUATIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Generations x population is too high for this host "
+                f"(~{estimated_evaluations} simulation runs requested, "
+                f"{MAX_CALIBRATION_EVALUATIONS} max). Lower one or both."
+            ),
+        )
 
     engine = get_engine()
     _, baseline_report = _run_and_validate(experiment, req.target_variable)

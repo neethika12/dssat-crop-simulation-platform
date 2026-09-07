@@ -37,11 +37,12 @@
     <p class="meta">Searches cultivar genetic coefficients (P1, P2, P5, G2, G3) with differential evolution to minimize simulated-vs-measured error.</p>
     <div class="control-row">
       <label for="maxiter-input">Generations</label>
-      <input id="maxiter-input" type="number" min="1" max="15" value="6" />
+      <input id="maxiter-input" type="number" min="1" max="8" value="2" />
       <label for="popsize-input">Population</label>
-      <input id="popsize-input" type="number" min="2" max="12" value="8" />
+      <input id="popsize-input" type="number" min="2" max="6" value="3" />
       <button id="run-calibrate-btn">Run Calibration</button>
     </div>
+    <p class="meta">Hosted on a free-tier server, so each simulation run is slower than on a local machine — keep generations/population low (defaults are tuned to finish in ~1 minute) or expect a longer wait.</p>
   </section>
 
   <section id="calibration-section" class="hidden">

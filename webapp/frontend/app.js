@@ -40,15 +40,24 @@ experimentSelect.addEventListener("change", updateExperimentMeta);
 async function runValidation() {
   setLoading(true, "Running real DSSAT-CSM simulation…");
   runValidateBtn.disabled = true;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // free-tier cold start can be slow
   try {
     const code = experimentSelect.value;
-    const res = await fetch(`${API_BASE}/api/validate?experiment_code=${encodeURIComponent(code)}`);
+    const res = await fetch(`${API_BASE}/api/validate?experiment_code=${encodeURIComponent(code)}`, {
+      signal: controller.signal,
+    });
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     const data = await res.json();
     renderValidation(data);
   } catch (err) {
-    alert(`Validation failed: ${err.message}`);
+    if (err.name === "AbortError") {
+      alert("Validation timed out after 60s — the free-tier backend may be waking up from idle. Try again.");
+    } else {
+      alert(`Validation failed: ${err.message}`);
+    }
   } finally {
+    clearTimeout(timeoutId);
     setLoading(false);
     runValidateBtn.disabled = false;
   }
@@ -96,6 +105,8 @@ function renderValidation(data) {
 async function runCalibration() {
   setLoading(true, "Calibrating cultivar coefficients — running many DSSAT-CSM simulations…");
   runCalibrateBtn.disabled = true;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 150000); // 150s safety net
   try {
     const body = {
       experiment_code: experimentSelect.value,
@@ -106,13 +117,21 @@ async function runCalibration() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     const data = await res.json();
     renderCalibration(data);
   } catch (err) {
-    alert(`Calibration failed: ${err.message}`);
+    if (err.name === "AbortError") {
+      alert(
+        "Calibration timed out after 150s. The free-tier host is slow — try lowering Generations/Population and running again."
+      );
+    } else {
+      alert(`Calibration failed: ${err.message}`);
+    }
   } finally {
+    clearTimeout(timeoutId);
     setLoading(false);
     runCalibrateBtn.disabled = false;
   }
