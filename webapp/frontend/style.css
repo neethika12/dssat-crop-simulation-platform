@@ -23,9 +23,34 @@ header {
   border-bottom: 1px solid var(--card-border);
 }
 
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 header h1 {
   margin: 0 0 6px;
   font-size: 1.5rem;
+}
+
+.secondary-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.secondary-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .subtitle {
@@ -181,3 +206,86 @@ th { color: var(--muted); font-weight: 600; }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.upload-grid label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.upload-grid input[type="file"] {
+  width: 100%;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+code {
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.85em;
+}
+
+#guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 32, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  overflow-y: auto;
+  z-index: 200;
+}
+
+.guide-panel {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 32px 36px 36px;
+  max-width: 720px;
+  width: 100%;
+  line-height: 1.55;
+}
+
+.guide-panel h2 {
+  margin-top: 0;
+}
+
+.guide-panel h3 {
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.guide-panel p, .guide-panel li {
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.guide-panel ul {
+  padding-left: 20px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.close-btn:hover { color: var(--text); }

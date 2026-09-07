@@ -44,9 +44,47 @@ DDG // {home}
 DPM // {home}
 DDE // {home}
 
+MAL // {home}/bin dscsm048 PRFRM048
+MBA // {home}/bin dscsm048 CSCER048
+MBH // {home}/bin dscsm048 PRFRM048
+MBM // {home}/bin dscsm048 PRFRM048
+MBN // {home}/bin dscsm048 CRGRO048
+MBR // {home}/bin dscsm048 PRFRM048
+MBS // {home}/bin dscsm048 BSCER048
+MCB // {home}/bin dscsm048 CRGRO048
+MCH // {home}/bin dscsm048 CRGRO048
+MCN // {home}/bin dscsm048 CRGRO048
+MCO // {home}/bin dscsm048 CRGRO048
+MCP // {home}/bin dscsm048 CRGRO048
+MCS // {home}/bin dscsm048 CSYCA048
+MFA // {home}/bin dscsm048 CRGRO048
+MFB // {home}/bin dscsm048 CRGRO048
+MGB // {home}/bin dscsm048 CRGRO048
+MGG // {home}/bin dscsm048 PRFRM048
+MLT // {home}/bin dscsm048 CRGRO048
+MML // {home}/bin dscsm048 MLCER048
 MMZ // {home}/bin dscsm048 MZCER048
-MWH // {home}/bin dscsm048 CSCER048
+MNP // {home}/bin dscsm048 CRGRO048
+MPI // {home}/bin dscsm048 PIALO048
+MPN // {home}/bin dscsm048 CRGRO048
+MPP // {home}/bin dscsm048 CRGRO048
+MPR // {home}/bin dscsm048 CRGRO048
+MPT // {home}/bin dscsm048 PTSUB048
+MRI // {home}/bin dscsm048 RICER048
 MSB // {home}/bin dscsm048 CRGRO048
+MSC // {home}/bin dscsm048 SCCAN048
+MSF // {home}/bin dscsm048 CRGRO048
+MSG // {home}/bin dscsm048 SGCER048
+MSI // {home}
+MSU // {home}/bin dscsm048 CRGRO048
+MSW // {home}/bin dscsm048 SWCER048
+MTF // {home}/bin dscsm048 TFAPS048
+MTM // {home}/bin dscsm048 CRGRO048
+MTN // {home}/bin dscsm048 TNARO048
+MTR // {home}/bin dscsm048 TRARO048
+MVB // {home}/bin dscsm048 CRGRO048
+MWH // {home}/bin dscsm048 CSCER048
+MQU // {home}/bin dscsm048 CRGRO048
 MOT // {home}
 MU1 // {home}
 MU2 // {home}

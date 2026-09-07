@@ -10,8 +10,13 @@
 </head>
 <body>
 <header>
-  <h1>DSSAT Crop Simulation Validation Platform</h1>
-  <p class="subtitle">Real DSSAT-CSM engine &middot; real field-trial data &middot; automated cultivar calibration</p>
+  <div class="header-row">
+    <div>
+      <h1>DSSAT Crop Simulation Validation Platform</h1>
+      <p class="subtitle">Real DSSAT-CSM engine &middot; real field-trial data &middot; automated cultivar calibration</p>
+    </div>
+    <button id="open-guide-btn" class="secondary-btn">How This Works</button>
+  </div>
 </header>
 
 <main>
@@ -55,11 +60,173 @@
     </div>
   </section>
 
+  <section class="card controls" id="upload-section">
+    <h2>Test With Your Own Data</h2>
+    <p class="meta">
+      Upload a real DSSAT experiment file (any crop) and it runs through the
+      same real DSSAT-CSM engine as above — on your own data, not the bundled
+      examples. See the guide (top right) for what these files are and where
+      to get them.
+    </p>
+    <div class="upload-grid">
+      <div>
+        <label for="upload-filex">Experiment file (FileX) — required</label>
+        <input id="upload-filex" type="file" accept=".MZX,.SBX,.WHX,.SGX,.RIX,.PNX,.CBX,.BNX,.TMX,.PTX,.CSX,.CPX,.CHX,.FBX,.VBX,.SFX,.SUX,.CND,.CNX" />
+      </div>
+      <div>
+        <label for="upload-observed">Observed summary data (.xxA) — optional</label>
+        <input id="upload-observed" type="file" />
+      </div>
+      <div>
+        <label for="upload-observed-t">Observed time-series data (.xxT) — optional</label>
+        <input id="upload-observed-t" type="file" />
+      </div>
+    </div>
+    <button id="run-upload-btn">Upload &amp; Run</button>
+    <p id="upload-status" class="meta"></p>
+  </section>
+
+  <section id="upload-results-section" class="hidden">
+    <div class="card">
+      <h2>Your Data — Results</h2>
+      <p id="upload-message" class="meta"></p>
+      <div id="upload-variable-picker" class="control-row hidden">
+        <label for="upload-variable-select">Variable</label>
+        <select id="upload-variable-select"></select>
+      </div>
+      <div id="upload-metric-cards" class="metric-cards"></div>
+      <div id="upload-chart-wrap" class="chart-wrap hidden"><canvas id="upload-chart"></canvas></div>
+      <div id="upload-table-wrap" class="hidden">
+        <table id="upload-summary-table"></table>
+      </div>
+    </div>
+  </section>
+
   <div id="loading-overlay" class="hidden">
     <div class="spinner"></div>
     <p id="loading-text">Running DSSAT-CSM…</p>
   </div>
 </main>
+
+<div id="guide-overlay" class="hidden">
+  <div class="guide-panel">
+    <button id="close-guide-btn" class="close-btn" aria-label="Close guide">&times;</button>
+    <h2>How This Works (plain-English guide)</h2>
+
+    <h3>What is this page?</h3>
+    <p>
+      This is a tool for testing whether a crop-growth computer model
+      predicts real harvests accurately — and for automatically tuning that
+      model to fit better. It's built on top of <strong>DSSAT</strong>
+      (Decision Support System for Agrotechnology Transfer), a crop
+      simulation program that's been developed and used by agricultural
+      researchers worldwide for decades to predict how a crop will grow
+      given its soil, weather, and how it's managed (planting date,
+      fertilizer, irrigation, etc.).
+    </p>
+    <p>
+      Crucially, this isn't a simplified re-creation of DSSAT — it runs the
+      actual DSSAT program (compiled from its official source code) and
+      real historical field-experiment data. Nothing here is faked or
+      approximated for demo purposes.
+    </p>
+
+    <h3>What data is this using?</h3>
+    <p>
+      The dropdown at the top lists real field experiments from DSSAT's own
+      public example dataset — actual maize trials run by researchers in
+      places like Gainesville (Florida), Brazil, Spain, and Ghana, going
+      back to the 1980s and 90s. Each one recorded real measurements: how
+      much grain was harvested, how tall the plants grew, etc., under
+      different real-world conditions (irrigated vs. rainfed, high vs. low
+      nitrogen, etc.).
+    </p>
+
+    <h3>What does "Run Validation" do?</h3>
+    <p>
+      It runs the real DSSAT model using that experiment's actual weather,
+      soil, and management data, and asks it to <em>predict</em> the yield
+      for each treatment. Then it compares that prediction to what was
+      <em>actually measured</em> in the real field trial decades ago. The
+      chart shows both side by side — green bars are the model's guess,
+      orange bars are the real harvest.
+    </p>
+
+    <h3>What do RMSE, nRMSE, Willmott's d, and R&sup2; mean?</h3>
+    <p>These are four different ways of scoring "how close was the model's guess to reality?" — think of them like different report-card grades for the same test:</p>
+    <ul>
+      <li><strong>RMSE</strong> (Root Mean Squared Error) — the average size of the model's mistake, in the same units as the crop yield (kg per hectare). Smaller is better. An RMSE of 970 means the model's predictions were typically off by about 970 kg/ha.</li>
+      <li><strong>nRMSE</strong> (normalized RMSE) — the same idea, but as a percentage of the average real yield, so you can compare error size across very different experiments. Under ~15% is generally considered a good fit for crop models.</li>
+      <li><strong>Willmott's d</strong> — a score from 0 to 1 measuring overall agreement between predicted and real values. 1.0 would be a perfect match; above 0.9 is considered strong agreement.</li>
+      <li><strong>R&sup2;</strong> (R-squared) — from 0 to 1, how well the model's predictions track the <em>pattern</em> of the real results (e.g. correctly predicting which treatments yield more or less than others), even if the exact numbers are a bit off.</li>
+    </ul>
+
+    <h3>What does "Automated Calibration" do?</h3>
+    <p>
+      Every crop variety (cultivar) has internal "genetic coefficients" in
+      DSSAT — numbers describing things like how fast it matures or how
+      much it fills grain. Nobody knows the exact right numbers for a given
+      variety in advance; they're estimated and refined by comparing model
+      predictions to real field data, then adjusting.
+    </p>
+    <p>
+      This tool automates that adjustment process: it tries many different
+      combinations of those coefficients (using an algorithm called
+      differential evolution — think of it as an organized trial-and-error
+      search, not guesswork), re-runs the real DSSAT model each time, and
+      keeps the combination that gets closest to the real measured yields.
+      The chart shows the best error found getting smaller as it searches.
+    </p>
+
+    <h3>Can I test this with my own data?</h3>
+    <p>
+      Yes — that's what the <strong>"Test With Your Own Data"</strong>
+      section on the main page is for. Here's what you need:
+    </p>
+    <ul>
+      <li>
+        <strong>A FileX</strong> — DSSAT's standard experiment description
+        file (extension like <code>.MZX</code> for maize, <code>.SBX</code>
+        for soybean, <code>.WHX</code> for wheat, etc.). This describes the
+        field, planting details, weather station, soil, and treatments. If
+        you've used DSSAT's own tools (like XBuild) to set up an experiment,
+        this is the file it produces.
+      </li>
+      <li>
+        <strong>An observed-data file (optional)</strong> — DSSAT's summary
+        file of what was actually measured (extension like
+        <code>.MZA</code>), so the tool can compute validation statistics.
+        Without it, you'll still get the simulated predictions, just
+        nothing to compare them against.
+      </li>
+      <li>
+        A time-series observed-data file (<code>.xxT</code>) is also
+        accepted if you have one (e.g. leaf area or biomass measured over
+        the season, not just final yield).
+      </li>
+    </ul>
+    <p>
+      <strong>Scope note:</strong> "Run Validation" works for any crop
+      DSSAT supports, since it runs the real model directly on whatever you
+      upload. "Automated Calibration," however, is currently wired up only
+      for the built-in reference experiments (it needs to know which
+      cultivar file and coefficients to adjust for a given crop) — happy to
+      extend it to a specific crop/cultivar on request.
+    </p>
+    <p>
+      If DSSAT can't run your file, you'll see the model's own error
+      message rather than a generic failure — that's intentional, so a
+      real error (e.g. a missing soil profile) is diagnosable.
+    </p>
+
+    <h3>A note on hosting</h3>
+    <p>
+      This runs on free-tier hosting, which is slower and can idle down
+      after inactivity (the first request after a while may take ~30-60s to
+      wake back up — that's normal, not a bug).
+    </p>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

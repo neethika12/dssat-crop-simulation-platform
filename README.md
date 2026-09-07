@@ -97,9 +97,20 @@ python -m uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8420
 ```
 
 Then open http://localhost:8420. `webapp/backend/main.py` exposes
-`GET /api/experiments`, `GET /api/validate`, and `POST /api/calibrate`,
-all backed directly by the `dssat_validator` package above — no separate
-simulation logic, just a thin API layer over the same real engine.
+`GET /api/experiments`, `GET /api/validate`, `POST /api/calibrate`, and
+`POST /api/upload/validate`, all backed directly by the `dssat_validator`
+package above — no separate simulation logic, just a thin API layer over
+the same real engine.
+
+The dashboard includes an in-app **"How This Works"** guide (plain-English,
+no DSSAT background assumed) and a **"Test With Your Own Data"** upload
+form: upload any real DSSAT FileX experiment file (any crop — the engine's
+model-lookup table covers the full DSSAT crop list, not just maize) plus
+an optional observed-data file, and it runs through the same real
+DSSAT-CSM engine as the bundled examples. If DSSAT can't run the uploaded
+file, the model's own error message is surfaced rather than a generic
+failure. Calibration is currently wired up only for the bundled reference
+experiments (it needs to know which cultivar/genotype file to adjust).
 
 ## Setup
 

@@ -16,6 +16,15 @@ function setLoading(on, text) {
   if (text) loadingText.textContent = text;
 }
 
+// The backend sends null for statistically undefined values (e.g. R-squared
+// when a variable has zero variance across treatments, such as every
+// treatment sharing the same planting date).
+function fmtNum(value, decimals) {
+  return value === null || value === undefined || Number.isNaN(value)
+    ? "n/a"
+    : value.toFixed(decimals);
+}
+
 function metricCard(label, value, cls = "") {
   return `<div class="metric-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`;
 }
@@ -67,10 +76,10 @@ function renderValidation(data) {
   document.getElementById("validation-section").classList.remove("hidden");
   const r = data.report;
   document.getElementById("metric-cards").innerHTML = [
-    metricCard("RMSE", `${r.rmse.toFixed(1)}`, ""),
-    metricCard("Normalized RMSE", `${r.nrmse_pct.toFixed(1)}%`, ""),
-    metricCard("Willmott's d", r.willmott_d.toFixed(3), r.willmott_d > 0.9 ? "good" : ""),
-    metricCard("R²", r.r_squared.toFixed(3), r.r_squared > 0.9 ? "good" : ""),
+    metricCard("RMSE", fmtNum(r.rmse, 1), ""),
+    metricCard("Normalized RMSE", `${fmtNum(r.nrmse_pct, 1)}%`, ""),
+    metricCard("Willmott's d", fmtNum(r.willmott_d, 3), r.willmott_d > 0.9 ? "good" : ""),
+    metricCard("R²", fmtNum(r.r_squared, 3), r.r_squared > 0.9 ? "good" : ""),
   ].join("");
 
   const labels = data.treatments.map((t) => `Trt ${t.treatment}`);
@@ -189,6 +198,147 @@ function renderCalibration(data) {
     .join("");
   paramsTable.innerHTML = `<thead><tr><th>Genetic coefficient</th><th>Calibrated value</th></tr></thead><tbody>${rows}</tbody>`;
 }
+
+// --- Guide modal ---
+
+const guideOverlay = document.getElementById("guide-overlay");
+document.getElementById("open-guide-btn").addEventListener("click", () => {
+  guideOverlay.classList.remove("hidden");
+});
+document.getElementById("close-guide-btn").addEventListener("click", () => {
+  guideOverlay.classList.add("hidden");
+});
+guideOverlay.addEventListener("click", (e) => {
+  if (e.target === guideOverlay) guideOverlay.classList.add("hidden");
+});
+
+// --- Upload your own data ---
+
+let uploadChart = null;
+let uploadResultCache = null;
+
+const runUploadBtn = document.getElementById("run-upload-btn");
+const uploadStatus = document.getElementById("upload-status");
+const uploadVariableSelect = document.getElementById("upload-variable-select");
+
+async function runUpload() {
+  const filexInput = document.getElementById("upload-filex");
+  if (!filexInput.files.length) {
+    uploadStatus.textContent = "Choose an experiment (FileX) file first.";
+    return;
+  }
+
+  const form = new FormData();
+  form.append("filex", filexInput.files[0]);
+  const observedInput = document.getElementById("upload-observed");
+  const observedTInput = document.getElementById("upload-observed-t");
+  if (observedInput.files.length) form.append("observed", observedInput.files[0]);
+  if (observedTInput.files.length) form.append("observed_timeseries", observedTInput.files[0]);
+
+  setLoading(true, "Running your experiment through the real DSSAT-CSM engine…");
+  runUploadBtn.disabled = true;
+  uploadStatus.textContent = "";
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${API_BASE}/api/upload/validate`, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    renderUploadResult(data);
+  } catch (err) {
+    if (err.name === "AbortError") {
+      uploadStatus.textContent = "Timed out after 60s — the free-tier backend may be waking up. Try again.";
+    } else {
+      uploadStatus.textContent = `Failed: ${err.message}`;
+    }
+    document.getElementById("upload-results-section").classList.add("hidden");
+  } finally {
+    clearTimeout(timeoutId);
+    setLoading(false);
+    runUploadBtn.disabled = false;
+  }
+}
+
+function renderUploadResult(data) {
+  uploadResultCache = data;
+  document.getElementById("upload-results-section").classList.remove("hidden");
+  const messageEl = document.getElementById("upload-message");
+  const pickerEl = document.getElementById("upload-variable-picker");
+  const chartWrap = document.getElementById("upload-chart-wrap");
+  const tableWrap = document.getElementById("upload-table-wrap");
+
+  if (!data.has_observed_data) {
+    messageEl.textContent = data.message;
+    pickerEl.classList.add("hidden");
+    chartWrap.classList.add("hidden");
+    document.getElementById("upload-metric-cards").innerHTML = "";
+    tableWrap.classList.remove("hidden");
+    const rows = data.simulated_summary || [];
+    const cols = rows.length ? Object.keys(rows[0]) : [];
+    const table = document.getElementById("upload-summary-table");
+    table.innerHTML =
+      `<thead><tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead>` +
+      `<tbody>${rows.map((r) => `<tr>${cols.map((c) => `<td>${r[c]}</td>`).join("")}</tr>`).join("")}</tbody>`;
+    return;
+  }
+
+  messageEl.textContent = `Ran "${data.filename}" successfully — ${data.variables.length} validated variable(s) found.`;
+  tableWrap.classList.add("hidden");
+  pickerEl.classList.remove("hidden");
+  chartWrap.classList.remove("hidden");
+
+  uploadVariableSelect.innerHTML = data.variables.map((v) => `<option value="${v}">${v}</option>`).join("");
+  renderUploadVariable(data.variables[0]);
+}
+
+function renderUploadVariable(variable) {
+  const data = uploadResultCache;
+  if (!data || !data.reports[variable]) return;
+  const r = data.reports[variable];
+
+  document.getElementById("upload-metric-cards").innerHTML = [
+    metricCard("RMSE", fmtNum(r.rmse, 1)),
+    metricCard("Normalized RMSE", `${fmtNum(r.nrmse_pct, 1)}%`),
+    metricCard("Willmott's d", fmtNum(r.willmott_d, 3), r.willmott_d > 0.9 ? "good" : ""),
+    metricCard("R²", fmtNum(r.r_squared, 3), r.r_squared > 0.9 ? "good" : ""),
+  ].join("");
+
+  const treatments = data.treatments_by_variable[variable];
+  const labels = treatments.map((t) => `Trt ${t.treatment}`);
+  const simulated = treatments.map((t) => t.simulated);
+  const measured = treatments.map((t) => t.measured);
+
+  if (uploadChart) uploadChart.destroy();
+  uploadChart = new Chart(document.getElementById("upload-chart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Simulated", data: simulated, backgroundColor: "#4fb286" },
+        { label: "Measured", data: measured, backgroundColor: "#e0a94f" },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: `${variable} — ${data.filename}`, color: "#e8edf2" },
+        legend: { labels: { color: "#e8edf2" } },
+      },
+      scales: {
+        x: { ticks: { color: "#8ea0b3" }, grid: { color: "#263544" } },
+        y: { ticks: { color: "#8ea0b3" }, grid: { color: "#263544" } },
+      },
+    },
+  });
+}
+
+uploadVariableSelect.addEventListener("change", () => renderUploadVariable(uploadVariableSelect.value));
+runUploadBtn.addEventListener("click", runUpload);
 
 runValidateBtn.addEventListener("click", runValidation);
 runCalibrateBtn.addEventListener("click", runCalibration);
